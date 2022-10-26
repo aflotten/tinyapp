@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/aflotten/tinyapp/issues"
   },
-  "homepage": "https://github.com/aflotten/tinyapp#readme"
+  "homepage": "https://github.com/aflotten/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
 }
