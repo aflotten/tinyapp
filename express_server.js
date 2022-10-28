@@ -6,6 +6,15 @@ app.use(express.urlencoded({ extended: true }));
 
 app.set("view engine", "ejs");
 
+function generateRandomString(desiredLength) {
+  let result = '';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890';
+  for (let i = 0; i < desiredLength; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result;
+};
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -45,14 +54,12 @@ app.post("/urls", (req, res) => {
   
 });
 
-function generateRandomString(desiredLength) {
-    let result = '';
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890';
-    for (let i = 0; i < desiredLength; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    return result;
-}
+app.get("/u/:id", (req, res) => {
+  const id = req.params.id;
+  const longURL = urlDatabase[id];
+  res.redirect(longURL);
+})
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on Port: ${PORT}`);
