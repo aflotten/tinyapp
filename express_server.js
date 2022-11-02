@@ -7,15 +7,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
 app.set("view engine", "ejs");
 
-//generate 6 random character sequence for short url
-function generateRandomString(desiredLength) {
-  let result = '';
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890';
-  for (let i = 0; i < desiredLength; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return result;
-};
+const { getUserByEmail, createRandomString} = require('./helperFunctions');
 
 const users = {
   userRandomID: {
@@ -74,7 +66,7 @@ app.post("/logout", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const shortURL = generateRandomString(6);
+  const shortURL = createRandomString(6);
   urlDatabase[shortURL] = req.body.longURL
   res.redirect("/urls");
 });
@@ -94,17 +86,30 @@ app.get("/register", (req, res) => {
   res.render("urls_register", templateVars);
 });
 
-app.post("/urls/register", (req, res) => {
-  const user_id = generateRandomString(8);
-  res.cookie("user_id", user_id)
-  users[user_id] = {
-    user_id,
-    email: req.body.email,
-    password: req.body.password
-  };
-  console.log(users)
-  res.redirect("/urls");
+// register post route
+app.post("/register", (req, res) => {
+  correctEmail = req.body.email;
+  correctPass = req.body.password;
+  if (correctEmail && correctPass) {
+    if (!getUserByEmail(correctEmail, users)) {
+      const userID = createRandomString(8);
+      users[userID] = {
+        userID: userID,
+        email: req.body.email,
+        password: req.body.password
+      };
+      console.log(users)
+      res.redirect("/urls");
+    } else {
+      const msg = "An account with this email already exists. Please try again.";
+      res.sendStatus(400);
+    }
+  } else {
+    const msg = "Username or password cannot be empty. Please try again."
+    res.sendStatus(400);
+  }
 });
+
 
 
 app.get("/u/:id", (req, res) => {
