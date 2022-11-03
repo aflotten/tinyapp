@@ -1,8 +1,8 @@
 //check if user email is already in user database
 const getUserByEmail = (email, users) => {
   for (const user in users) {
-    if(users[user].email === email) {
-      return users[user];
+    if (users[user].email === email) {
+      return user;
     }
   }
   return null;
@@ -19,4 +19,4 @@ function createRandomString(desiredLength) {
   return result;
 };
 
-module.exports = { getUserByEmail, createRandomString};
+module.exports = { getUserByEmail, createRandomString };
