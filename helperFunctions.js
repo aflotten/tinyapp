@@ -1,3 +1,17 @@
+/* returns URLs where userID equals id of logged in user and update code to:
+only display urls if the user is logged in and show urls that belong to the user when logged in */
+
+const urlsForUser = (id, database) => {
+  let userURLs = {};
+  for (const url in database) {
+    if (id === database[url].userID) {
+      userURLs[url] = database[url];
+    }
+  }
+  return userURLs;
+};
+
+
 //check if user email is already in user database
 const getUserByEmail = (email, users) => {
   for (const user in users) {
@@ -19,4 +33,4 @@ function createRandomString(desiredLength) {
   return result;
 };
 
-module.exports = { getUserByEmail, createRandomString };
+module.exports = { getUserByEmail, createRandomString, urlsForUser };

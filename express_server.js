@@ -13,7 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.set("view engine", "ejs");
 
-const { getUserByEmail, createRandomString } = require('./helperFunctions');
+const { getUserByEmail, createRandomString, urlsForUser } = require('./helperFunctions');
 
 const users = {
   userRandomID: {
@@ -29,8 +29,14 @@ const users = {
 };
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
 };
 
 app.get("/urls/new", (req, res) => {
@@ -48,9 +54,23 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const userCookie = req.cookies["user_id"];
-  const templateVars = { urls: urlDatabase, user: users[userCookie] };
+  const userID = req.cookies.user_id;
+  const URLS = urlsForUser(userID, urlDatabase);
+  console.log(URLS);
+  const templateVars = {
+    urls: URLS,
+    user: users[userID],
+  };
+
+  if(!userID) {
+    res.send("<html><body><div>Please login to view your urls.</div><a href='/login'>Login</a></body></html>");
+  }
+
   res.render("urls_index", templateVars);
+
+  // const userCookie = req.cookies["user_id"];
+  // const templateVars = { urls: urlDatabase, user: users[userCookie] };
+  // res.render("urls_index", templateVars);
 });
 
 
@@ -102,8 +122,11 @@ app.post("/login", (req, res) => {
 app.post("/urls", (req, res) => {
 if (req.cookies.user_id) {
   const shortURL = createRandomString(6);
-  urlDatabase[shortURL] = req.body.longURL;
-  //res.redirect("/urls");
+  urlDatabase[shortURL] = {
+    longURL: req.body.longURL,
+    userID: req.cookies.user_id
+  };
+  res.redirect(`/urls/${shortURL}`);
 } else {
   res.send("Please login to view this page.")
 }
