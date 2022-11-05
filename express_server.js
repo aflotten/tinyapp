@@ -47,8 +47,8 @@ app.get("/", (req, res) => {
   if (req.session.user_id) {
     res.redirect("/urls");
   } else {
-    res.redirect("/login")
-  };
+    res.redirect("/login");
+  }
 });
 
 app.get("/urls.json", (req, res) => {
@@ -57,15 +57,13 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const userID = req.session.user_id;
-  console.log(userID)
   const URLS = urlsForUser(userID, urlDatabase);
-  console.log(urlDatabase);
   const templateVars = {
     urls: URLS,
     user: users[userID],
   };
 
-  if(!userID) {
+  if (!userID) {
     res.send("<html><body><div>Please login to view your urls.</div><a href='/login'>Login</a></body></html>");
   }
 
@@ -99,12 +97,10 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const userEmail = getUserByEmail(email, users);
-  const loggedInUser = users[userEmail];
+  const loggedInUser = users[userEmail.id];
   if (loggedInUser) {
     if (bcrypt.compareSync(password, loggedInUser.password)) {
-      console.log(loggedInUser);
-      console.log(password); // ask how this is being logged
-      // req.session.user_id
+      req.session.user_id = userEmail.id;
       res.redirect("/urls");
       return;
     } else {
@@ -120,17 +116,16 @@ app.post("/login", (req, res) => {
 // URL routes: edit | delete | :id
 
 app.post("/urls", (req, res) => {
-if (req.session.user_id) {
-  const shortURL = createRandomString(6);
-  urlDatabase[shortURL] = {
-    longURL: req.body.longURL,
-    userID: req.session.user_id
-  };
-  console.log(urlDatabase);
-  res.redirect(`/urls`);
-} else {
-  res.send("Please login to view this page.")
-}
+  if (req.session.user_id) {
+    const shortURL = createRandomString(6);
+    urlDatabase[shortURL] = {
+      longURL: req.body.longURL,
+      userID: req.session.user_id
+    };
+    res.redirect(`/urls`);
+  } else {
+    res.send("Please login to view this page.");
+  }
 });
 
 app.get("/urls/new", (req, res) => {
@@ -150,15 +145,14 @@ app.get("/urls/:id", (req, res) => {
 app.post("/urls/:shortURL/edit", (req, res) => {
   const userID = req.session.user_id;
   if (!userID) {
-    return res.status(400).send("<html><body><div>Unauthorized to edit URL. Please login.</div><a href='/login'>Login</a></body></html>")
+    return res.status(400).send("<html><body><div>Unauthorized to edit URL. Please login.</div><a href='/login'>Login</a></body></html>");
   } else {
     const URLS = urlsForUser(userID, urlDatabase);
     if (URLS[req.params.shortURL]) {
       urlDatabase[req.params.shortURL].longURL = req.body.updatedURL;
-      console.log("LOOK HERE", req.body);
       return res.redirect("/urls");
     } else {
-      return res.status(400).send("<html><body><div>Unauthorized to edit URL. Please login.</div><a href='/login'>Login</a></body></html>")
+      return res.status(400).send("<html><body><div>Unauthorized to edit URL. Please login.</div><a href='/login'>Login</a></body></html>");
     }
   }
 });
@@ -174,7 +168,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
       delete urlDatabase[del];
       res.redirect("/urls");
     } else {
-      return res.status(400).send("<html><body><div>URL not in database.</div><a href='/urls'>Back to main page</a></body></html>")
+      return res.status(400).send("<html><body><div>URL not in database.</div><a href='/urls'>Back to main page</a></body></html>");
     }
   }
 });
@@ -182,8 +176,8 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   const longURL = urlDatabase[id];
-  if(!longURL) {
-    return res.send("<html><body><div>Page does not exist within the database.</div><a href='/urls'>Back to main page</a></body></html>")
+  if (!longURL) {
+    return res.send("<html><body><div>Page does not exist within the database.</div><a href='/urls'>Back to main page</a></body></html>");
   }
   res.redirect(longURL);
 });

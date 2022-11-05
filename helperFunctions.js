@@ -4,21 +4,20 @@ only display urls if the user is logged in and show urls that belong to the user
 const urlsForUser = (id, database) => {
   let userURLs = {};
   for (const url in database) {
-    if(database[url] !== undefined) {
-    if (id === database[url].userID) {
-      userURLs[url] = database[url];
+    if (database[url] !== undefined) {
+      if (id === database[url].userID) {
+        userURLs[url] = database[url];
+      }
     }
-  }
   }
   return userURLs;
 };
-
 
 //check if user email is already in user database
 const getUserByEmail = (email, users) => {
   for (const user in users) {
     if (users[user].email === email) {
-      return user;
+      return users[user];
     }
   }
   return null;
@@ -30,9 +29,9 @@ function createRandomString(desiredLength) {
   let result = '';
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890';
   for (let i = 0; i < desiredLength; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
-};
+}
 
 module.exports = { getUserByEmail, createRandomString, urlsForUser };
