@@ -4,9 +4,11 @@ only display urls if the user is logged in and show urls that belong to the user
 const urlsForUser = (id, database) => {
   let userURLs = {};
   for (const url in database) {
+    if(database[url] !== undefined) {
     if (id === database[url].userID) {
       userURLs[url] = database[url];
     }
+  }
   }
   return userURLs;
 };
