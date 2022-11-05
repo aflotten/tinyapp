@@ -3,6 +3,10 @@ const app = express();
 const PORT = 8080;
 const cookieParser = require("cookie-parser");
 
+const bcrypt = require("bcryptjs");
+const password = "purple-monkey-dinosaur"; // found in the req.body object
+const hashedPassword = bcrypt.hashSync(password, 10);
+
 // const cookieSession = require("cookie-session");
 // app.use(cookieSession({
 //   name: 'session',
@@ -99,7 +103,9 @@ app.post("/login", (req, res) => {
   const userEmail = getUserByEmail(email, users);
   const loggedInUser = users[userEmail];
   if (loggedInUser) {
-    if (loggedInUser.password === req.body.password) {
+    if (bcrypt.compareSync(password, loggedInUser.password)) {
+      console.log(loggedInUser);
+      console.log(password); // ask how this is being logged
       res.cookie("user_id", loggedInUser.id);
       res.redirect("/urls");
       return;
@@ -196,21 +202,19 @@ app.get("/register", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  const correctEmail = req.body.email;
-  const correctPass = req.body.password;
   const user_id = createRandomString(8);
 
-  if (!correctEmail || !correctPass || getUserByEmail(correctEmail, users)) {
+  if (!req.body.email || !req.body.password || getUserByEmail(req.body.email, users)) {
     res.status(400).send("Email already exists, please go to the login page and sign in.");
   } else {
+    res.cookie("user_id", user_id);
     users[user_id] = {
       id: user_id,
-      email: correctEmail,
-      password: correctPass
+      email: req.body.email,
+      password: bcrypt.hashSync(req.body.password, 10)
     };
-    console.log(correctEmail);
     console.log(urlDatabase);
-    res.cookie("user_id", user_id);
+    console.log(users[user_id].password)
     res.redirect("/urls");
   }
 });
