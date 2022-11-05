@@ -39,14 +39,14 @@ const urlDatabase = {
   },
 };
 
-app.get("/urls/new", (req, res) => {
-  if (req.cookies.user_id) {
-    const templateVars = { user: users[req.cookies["user_id"]] };
-    return res.render("urls_new", templateVars);
-  } else {
-    return res.redirect("/login");
-  }
-});
+// app.get("/urls/new", (req, res) => {
+//   if (req.cookies.user_id) {
+//     const templateVars = { user: users[req.cookies["user_id"]] };
+//     return res.render("urls_new", templateVars);
+//   } else {
+//     return res.redirect("/login");
+//   }
+// });
 
 
 app.get("/urls.json", (req, res) => {
@@ -67,10 +67,6 @@ app.get("/urls", (req, res) => {
   }
 
   res.render("urls_index", templateVars);
-
-  // const userCookie = req.cookies["user_id"];
-  // const templateVars = { urls: urlDatabase, user: users[userCookie] };
-  // res.render("urls_index", templateVars);
 });
 
 
@@ -126,7 +122,7 @@ if (req.cookies.user_id) {
     longURL: req.body.longURL,
     userID: req.cookies.user_id
   };
-  res.redirect(`/urls/${shortURL}`);
+  res.redirect(`/urls`);
 } else {
   res.send("Please login to view this page.")
 }
@@ -147,13 +143,34 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.post("/urls/:shortURL/edit", (req, res) => {
-  urlDatabase[req.params.shortURL] = req.body.updatedURL;
-  res.redirect('/urls');
+  const userID = req.cookies.user_id;
+  if (!userID) {
+    return res.status(400).send("<html><body><div>Unauthorized to edit URL. Please loging</div><a href='/login'>Login</a></body></html>")
+  } else {
+    const URLS = urlsForUser(userID, urlDatabase);
+    if (URLS[req.params.shortURL]) {
+      urlDatabase[req.params.shortURL] = req.body.longURL;
+      return res.redirect("/urls");
+    } else {
+      return res.status(400).send("<html><body><div>Unauthorized to edit URL. Please loging</div><a href='/login'>Login</a></body></html>")
+    }
+  }
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect('/urls');
+  const userID = req.cookies.user_id;
+  if (!userID) {
+    return res.status(400).send("<html><body><div>Unauthorized to delete URL. Please loging</div><a href='/login'>Login</a></body></html>");
+  } else {
+    const URLS = urlsForUser(userID, urlDatabase);
+    const del = req.params.shortURL;
+    if (URLS[del]) {
+      delete urlDatabase[del];
+      res.redirect("/urls");
+    } else {
+      return res.status(400).send("<html><body><div>URL not in database.</div><a href='/urls'>Back to main page</a></body></html>")
+    }
+  }
 });
 
 app.get("/u/:id", (req, res) => {
