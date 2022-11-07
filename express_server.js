@@ -1,12 +1,15 @@
+//server + port requirements
 const express = require("express");
 const app = express();
 const PORT = 8080;
-const cookieParser = require("cookie-parser");
 
+//password requirements
 const bcrypt = require("bcryptjs");
 const password = "purple-monkey-dinosaur"; // found in the req.body object
 const hashedPassword = bcrypt.hashSync(password, 10);
 
+//cookie requirements
+const cookieParser = require("cookie-parser");
 const cookieSession = require("cookie-session");
 app.use(cookieSession({
   name: 'session',
@@ -17,32 +20,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.set("view engine", "ejs");
 
+//import helper functions
 const { getUserByEmail, createRandomString, urlsForUser } = require('./helperFunctions');
 
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur",
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
-  },
-};
+//user account objects
+const users = {};
+const urlDatabase = {};
 
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW",
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW",
-  },
-};
-
+//tinyapp homepage -> redirect to log in if not already
 app.get("/", (req, res) => {
   if (req.session.user_id) {
     res.redirect("/urls");
@@ -51,10 +36,7 @@ app.get("/", (req, res) => {
   }
 });
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
+//display a users urls if logged in or prompted to login
 app.get("/urls", (req, res) => {
   const userID = req.session.user_id;
   const URLS = urlsForUser(userID, urlDatabase);
@@ -72,8 +54,7 @@ app.get("/urls", (req, res) => {
 
 
 /////////////////////////////////////
-// Logout method
-
+// Logout method - clear cookies which will redirect to login, and if server is still up, allow users to log back in.
 app.post("/logout", (req, res) => {
   res.clearCookie('session');
   res.clearCookie('session.sig');
@@ -83,6 +64,7 @@ app.post("/logout", (req, res) => {
 /////////////////////////////////////
 // Login get and post
 
+//render login page
 app.get("/login", (req, res) => {
   if (req.session.user_id) {
     res.redirect("/urls");
@@ -93,28 +75,34 @@ app.get("/login", (req, res) => {
   res.render("urls_login", templateVars);
 });
 
+// get user email and hashed password to check/match within database and redirect the logged in user to /urls
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const userEmail = getUserByEmail(email, users);
-  const loggedInUser = users[userEmail.id];
-  if (loggedInUser) {
-    if (bcrypt.compareSync(password, loggedInUser.password)) {
-      req.session.user_id = userEmail.id;
-      res.redirect("/urls");
-      return;
-    } else {
-      res.send("Password is incorrect! Please try again");
-    }
+  const loggedInUser = getUserByEmail(email, users);
+
+  if(!email || !password) {
+    return res.status(400).send("Email or password is invalid, please try again.");
+  }
+
+  if (loggedInUser === null) {
+    return res.status(400).send("This email does not exist, please check email or register account.");
+  }
+
+  if(!bcrypt.compareSync(password, loggedInUser.password)) {
+    return res.status(400).send("Incorrect password, please try again.");
   } else {
-    res.send("Email not found.");
+    req.session.user_id = loggedInUser.id;
+    res.redirect("/urls");
   }
 });
+
 
 
 /////////////////////////////////////
 // URL routes: edit | delete | :id
 
+//submits form from user to make shortURL
 app.post("/urls", (req, res) => {
   if (req.session.user_id) {
     const shortURL = createRandomString(6);
@@ -122,12 +110,13 @@ app.post("/urls", (req, res) => {
       longURL: req.body.longURL,
       userID: req.session.user_id
     };
-    res.redirect(`/urls`);
+    res.redirect(`/urls/${shortURL}`);
   } else {
     res.send("Please login to view this page.");
   }
 });
 
+//if user is logged in, render create new shortURL page - otherwise redirect to login
 app.get("/urls/new", (req, res) => {
   if (req.session.user_id) {
     const templateVars = { user: users[req.session["user_id"]] };
@@ -142,6 +131,7 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+//submits form to allow user to edit an existing url within their database object if logged in
 app.post("/urls/:shortURL/edit", (req, res) => {
   const userID = req.session.user_id;
   if (!userID) {
@@ -157,10 +147,11 @@ app.post("/urls/:shortURL/edit", (req, res) => {
   }
 });
 
+//submits form to allow user to delete an existing url within their database object if logged in
 app.post("/urls/:shortURL/delete", (req, res) => {
   const userID = req.session.user_id;
   if (!userID) {
-    return res.status(400).send("<html><body><div>Unauthorized to delete URL. Please loging</div><a href='/login'>Login</a></body></html>");
+    return res.status(400).send("<html><body><div>Unauthorized to delete URL. Please login.</div><a href='/login'>Login</a></body></html>");
   } else {
     const URLS = urlsForUser(userID, urlDatabase);
     const del = req.params.shortURL;
@@ -173,6 +164,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   }
 });
 
+//Prompt a redirect to /urls if a page does not exist
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   const longURL = urlDatabase[id];
@@ -185,16 +177,17 @@ app.get("/u/:id", (req, res) => {
 /////////////////////////////////////
 // Register get and post
 
+//render register page for non logged in users.
 app.get("/register", (req, res) => {
   if (req.session.user_id) {
     res.redirect("/urls");
     return;
   }
-
   const templateVars = { user: users[req.session["user_id"]] };
   res.render("urls_register", templateVars);
 });
 
+//submits form to allow user to register account if email is unique to database. App will hash and store password. 
 app.post("/register", (req, res) => {
   const user_id = createRandomString(8);
 
