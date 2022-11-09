@@ -128,7 +128,11 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase, user: users[req.session["user_id"]] };
+  if(req.session.user_id === urlDatabase[req.params.id].userID) {
   res.render("urls_show", templateVars);
+  } else {
+    res.redirect("/login");
+  }
 });
 
 //submits form to allow user to edit an existing url within their database object if logged in
@@ -165,13 +169,21 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 //Prompt a redirect to /urls if a page does not exist
+
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
-  const longURL = urlDatabase[id];
-  if (!longURL) {
-    return res.send("<html><body><div>Page does not exist within the database.</div><a href='/urls'>Back to main page</a></body></html>");
+  let longURL = null;
+  for(let record in urlDatabase) {
+    if (id.toString() === record.toString()) {
+      longURL = urlDatabase[record].longURL;
+    }
   }
-  res.redirect(longURL);
+  if (!longURL) {
+    res.send("<html><body><div>Page does not exist within the database.</div><a href='/urls'>Back to main page</a></body></html>");
+    hasRun = true;
+  } else {
+   res.redirect(longURL);
+  };
 });
 
 /////////////////////////////////////
