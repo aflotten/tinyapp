@@ -9,7 +9,6 @@ const password = "purple-monkey-dinosaur"; // found in the req.body object
 const hashedPassword = bcrypt.hashSync(password, 10);
 
 //cookie requirements
-const cookieParser = require("cookie-parser");
 const cookieSession = require("cookie-session");
 app.use(cookieSession({
   name: 'session',
@@ -17,7 +16,6 @@ app.use(cookieSession({
 }));
 
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
 app.set("view engine", "ejs");
 
 //import helper functions
@@ -131,7 +129,7 @@ app.get("/urls/:id", (req, res) => {
   if(req.session.user_id === urlDatabase[req.params.id].userID) {
   res.render("urls_show", templateVars);
   } else {
-    res.redirect("/login");
+    res.status(400).send("<html><body><div>Unauthorized to access URLs. Please login.</div><a href='/login'>Login</a></body></html>");
   }
 });
 
